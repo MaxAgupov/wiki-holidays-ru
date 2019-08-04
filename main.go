@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"time"
-	"wikiholidays/formatter"
 )
 
 type Response struct {
@@ -26,44 +24,63 @@ type Pages struct {
 	NS      uint64 `json:"ns"`
 }
 
-func getWikiReport(reportDay *time.Time) string {
-	wikiRequest := "https://ru.wikipedia.org/w/api.php?action=query&format=json&&prop=extracts&exlimit=1&explaintext"
-	data := formatter.GetDateString(reportDay)
-	wikiRequest += "&titles=" + url.QueryEscape(data)
+func getWikiReport(day string) string {
+	wikiRequest := "https://ru.wikipedia.org/w/api.php?" +
+		"action=query&format=json&&prop=extracts&exlimit=1&explaintext&titles=" + url.QueryEscape(day)
 
 	log.Print(wikiRequest)
-	if response, err := http.Get(wikiRequest); err != nil {
-		log.Print("Wikipedia is not respond")
-	} else {
-		defer func() {
-			if err := response.Body.Close(); err != nil {
-				log.Print(err)
-			}
-		}()
-		contents, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			log.Print(err)
-			return ""
-		}
-		var wr Response
-		if err := json.Unmarshal(contents, &wr); err != nil {
-			log.Print("Error", err)
-			return ""
-		}
-
-		if l := len(wr.Query.Pages); l == 0 || l > 1 {
-			log.Print("There must be only one page - ", l)
-			return ""
-		}
-		var content string
-		for _, v := range wr.Query.Pages {
-			content = v.Extract
-		}
-		return content
+	response, err := http.Get(wikiRequest);
+	if  err != nil {
+		log.Print("Wikipedia is not respond",  err)
+		return ""
 	}
-	return ""
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			log.Print(err)
+		}
+	}()
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Print(err)
+		return ""
+	}
+	var wr Response
+	if err := json.Unmarshal(contents, &wr); err != nil {
+		log.Print("Error", err)
+		return ""
+	}
+	if l := len(wr.Query.Pages); l == 0 || l > 1 {
+		log.Print("There must be only one page - ", l)
+		return ""
+	}
+	var content string
+	for _, v := range wr.Query.Pages {
+		content = v.Extract
+	}
+	return content
+}
+
+var calendar = map[string]int{
+	"января":   31,
+	"февраля":  29,
+	"марта":    31,
+	"апреля":   30,
+	"мая":      31,
+	"июня":     30,
+	"июля":     31,
+	"августа":  31,
+	"сентября": 30,
+	"октября":  31,
+	"ноября":   30,
+	"декабря":  31,
 }
 
 func main() {
 
+	for month, lastDate := range calendar {
+		log.Print(month, lastDate)
+	}
+	resp := getWikiReport("1 декабря")
+
+	log.Print(string(resp))
 }
