@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
+	"time"
 )
 
 type Response struct {
@@ -28,10 +31,10 @@ func getWikiReport(day string) string {
 	wikiRequest := "https://ru.wikipedia.org/w/api.php?" +
 		"action=query&format=json&&prop=extracts&exlimit=1&explaintext&titles=" + url.QueryEscape(day)
 
-	log.Print(wikiRequest)
+	//log.Print(wikiRequest)
 	response, err := http.Get(wikiRequest);
-	if  err != nil {
-		log.Print("Wikipedia is not respond",  err)
+	if err != nil {
+		log.Print("Wikipedia is not respond", err)
 		return ""
 	}
 	defer func() {
@@ -60,27 +63,81 @@ func getWikiReport(day string) string {
 	return content
 }
 
-var calendar = map[string]int{
-	"января":   31,
-	"февраля":  29,
-	"марта":    31,
-	"апреля":   30,
-	"мая":      31,
-	"июня":     30,
-	"июля":     31,
-	"августа":  31,
-	"сентября": 30,
-	"октября":  31,
-	"ноября":   30,
-	"декабря":  31,
+var monthsGenetive = [...]string{
+	"января",
+	"февраля",
+	"марта",
+	"апреля",
+	"мая",
+	"июня",
+	"июля",
+	"августа",
+	"сентября",
+	"октября",
+	"ноября",
+	"декабря",
+}
+var monthDays = [...]int{
+	31,
+	29,
+	31,
+	30,
+	31,
+	30,
+	31,
+	31,
+	30,
+	31,
+	30,
+	31,
+}
+
+type Day struct {
+	Month string `json:"month"`
+	Day   string `json:"day"`
+	Descr string `json:"descr"`
+}
+
+type Description struct {
+	Title   string                 `json:"title"`
+	Content map[string]interface{} `json:"content"`
 }
 
 func main() {
+	var reports = make(map[time.Month]interface{})
 
-	for month, lastDate := range calendar {
-		log.Print(month, lastDate)
+	for m := time.January; m <= time.December; m++ {
+		month := make(map[int]interface{})
+		reports[m] = month
+		for day := 1; day <= monthDays[m-1]; day++ {
+			date := strconv.Itoa(day) + " " + monthsGenetive[m-1]
+			log.Print(date)
+			resp := getWikiReport(date)
+			if resp == "" {
+				log.Print(date)
+				break
+			}
+			d := Day{m.String(), strconv.Itoa(day), resp}
+			month[day] = d
+		}
 	}
-	resp := getWikiReport("1 декабря")
+	tmpFile, err := os.OpenFile("v1.json", os.O_RDWR|os.O_CREATE, 0666)
 
-	log.Print(string(resp))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := tmpFile.Close(); err != nil {
+			log.Print(err)
+		}
+	}()
+	repJ, err := json.MarshalIndent(reports, "", " ")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tmpFile.Write(repJ)
+
+	log.Printf("Len: %d, filename=%s", len(reports), tmpFile.Name())
 }
