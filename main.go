@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"wikiholidays/wiki"
 )
 
 type Response struct {
@@ -95,7 +96,9 @@ var monthDays = [...]int{
 type Day struct {
 	Month string `json:"month"`
 	Day   string `json:"day"`
-	Descr string `json:"descr"`
+
+	//Descr string `json:"descr"`
+	Report wiki.Report `json:"report"`
 }
 
 type Description struct {
@@ -117,11 +120,24 @@ func main() {
 				log.Print(date)
 				break
 			}
-			d := Day{m.String(), strconv.Itoa(day), resp}
+
+			report, err := wiki.Parse(resp)
+			if err != nil {
+				log.Print("Error:", err)
+				return
+			}
+			location, _ := time.LoadLocation(wiki.MoscowLocation)
+			log.Print(location)
+			now := time.Now().In(location)
+
+			dStatInfo := time.Date(now.Year(), m, day, 0, 0, 0, 0, time.UTC)
+			report.SetCalendarInfo(&dStatInfo)
+
+			d := Day{m.String(), strconv.Itoa(day), report}
 			month[day] = d
 		}
 	}
-	tmpFile, err := os.OpenFile("v1.json", os.O_RDWR|os.O_CREATE, 0666)
+	tmpFile, err := os.OpenFile("holidays.v1.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if err != nil {
 		log.Fatal(err)
