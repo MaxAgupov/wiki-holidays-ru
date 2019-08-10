@@ -93,25 +93,21 @@ var monthDays = [...]int{
 	31,
 }
 
-type Day struct {
-	Month string `json:"month"`
-	Day   string `json:"day"`
-
-	//Descr string `json:"descr"`
+type DayHolidays struct {
+	Month  string      `json:"month"`
+	Day    string      `json:"day"`
 	Report wiki.Report `json:"report"`
 }
 
-type Description struct {
-	Title   string                 `json:"title"`
-	Content map[string]interface{} `json:"content"`
-}
+type MonthHolidays map[int]*DayHolidays
+type Holidays map[time.Month]*MonthHolidays
 
 func main() {
-	var reports = make(map[time.Month]interface{})
+	var reports = Holidays{}
 
-	for m := time.January; m <= time.December; m++ {
-		month := make(map[int]interface{})
-		reports[m] = month
+	for m := time.January; m <= time.January; m++ {
+		month := MonthHolidays{}
+		reports[m] = &month
 		for day := 1; day <= monthDays[m-1]; day++ {
 			date := strconv.Itoa(day) + " " + monthsGenetive[m-1]
 			log.Print(date)
@@ -133,8 +129,8 @@ func main() {
 			dStatInfo := time.Date(now.Year(), m, day, 0, 0, 0, 0, time.UTC)
 			report.SetCalendarInfo(&dStatInfo)
 
-			d := Day{m.String(), strconv.Itoa(day), report}
-			month[day] = d
+			d := DayHolidays{m.String(), strconv.Itoa(day), report}
+			month[day] = &d
 		}
 	}
 	tmpFile, err := os.OpenFile("holidays.v1.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
