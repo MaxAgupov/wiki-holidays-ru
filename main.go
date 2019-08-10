@@ -105,7 +105,7 @@ type Holidays map[time.Month]*MonthHolidays
 func main() {
 	var reports = Holidays{}
 
-	for m := time.January; m <= time.January; m++ {
+	for m := time.January; m <= time.December; m++ {
 		month := MonthHolidays{}
 		reports[m] = &month
 		for day := 1; day <= monthDays[m-1]; day++ {
