@@ -124,16 +124,12 @@ func main() {
 			}
 			location, _ := time.LoadLocation(wiki.MoscowLocation)
 			log.Print(location)
-			now := time.Now().In(location)
-
-			dStatInfo := time.Date(now.Year(), m, day, 0, 0, 0, 0, time.UTC)
-			report.SetCalendarInfo(&dStatInfo)
 
 			d := DayHolidays{m.String(), strconv.Itoa(day), report}
 			month[day] = &d
 		}
 	}
-	tmpFile, err := os.OpenFile("holidays.v1.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	tmpFile, err := os.OpenFile("holidays.v1.1.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if err != nil {
 		log.Fatal(err)
