@@ -66,8 +66,8 @@ func (parser *Parser) parseHolidays(line string) {
 		extraLinkMatch := regexp.MustCompile("Примечание: указано для невисокосных лет, в високосные годы список иной, см. \\d+ .*?\\.|\\(.*, см. \\d+ .*?\\)")
 		orthRegex := regexp.MustCompile("Православ(ие|ные)( (\\(|.*)Русская Православная Церковь(\\)|.*))?|В .*[Пп]равосл.* церкв(и|ях):?|(\\(|.*)Русская Православная Церковь(\\)|.*)")
 		cathRegex := regexp.MustCompile("Католи(цизм|ческие|чество)|В [Кк]атолич.* церкв(и|ях)")
-		othersRegex := regexp.MustCompile("Зороастризм|Другие конфессии|В католичестве и протестантстве|:?Славянские праздники:?|Ислам(ские|.?)|В Древневосточных церквях|Буддизм")
-		bahaiRegex := regexp.MustCompile("Бахаи")
+		othersRegex := regexp.MustCompile("Зороастризм|Другие конфессии|В католичестве и протестантстве|:?Славянские праздники:?|Ислам(ские|.?)|В Древневосточных церквях:?|Буддизм")
+		bahaiRegex := regexp.MustCompile("Бахаи(зм)?")
 		switch {
 		case extraLinkMatch.MatchString(line):
 			line = parser.splitLineWithHeader(extraLinkMatch, line, nil)
