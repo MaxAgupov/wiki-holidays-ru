@@ -14,6 +14,7 @@ type Parser struct {
 	subheader    string
 	currentArray *[]string
 	parser       func(line string)
+	currNames 	 []string
 }
 
 func (parser *Parser) reset() {
@@ -21,6 +22,7 @@ func (parser *Parser) reset() {
 	parser.subheader = ""
 	parser.currentArray = nil
 	parser.parser = nil
+	parser.currNames = nil
 }
 
 func (parser *Parser) setHeader(header string, parserFunc func(line string)) {
@@ -52,6 +54,7 @@ func (parser *Parser) parseHolidays(line string) {
 		case profHolidaysSubheader:
 			parser.currentArray = &parser.report.HolidaysProf
 		case nameDaysSubheader:
+			parser.currNames = nil
 			parser.parser = parser.parseNamedays
 			parser.parser(line)
 			return
@@ -65,9 +68,10 @@ func (parser *Parser) parseHolidays(line string) {
 		}
 		extraLinkMatch := regexp.MustCompile("Примечание: указано для невисокосных лет, в високосные годы список иной, см. \\d+ .*?\\.|\\(.*, см. \\d+ .*?\\)")
 		orthRegex := regexp.MustCompile("Православ(ие|ные):?( (\\(|.*)Русская Православная Церковь(\\)|.*))?|В .*[Пп]равосл.* церкв(и|ях):?|(\\(|.*)Русская Православная Церковь(\\)|.*)")
-		cathRegex := regexp.MustCompile("Католи(цизм|ческие|чество)|В [Кк]атолич.* церкв(и|ях)")
+		cathRegex := regexp.MustCompile("Католи(цизм|ческие|чество)|(В )?[Кк]атолич.* церко?в(ь|и|ях):?")
 		othersRegex := regexp.MustCompile("Зороастризм|Другие конфессии|В католичестве и протестантстве|:?Славянские праздники:?|Ислам(ские|.?)|В Древневосточных церквях:?|Буддизм")
 		bahaiRegex := regexp.MustCompile("Бахаи(зм)?")
+		armRegex := regexp.MustCompile("Армянская апостольская церковь:?")
 		switch {
 		case extraLinkMatch.MatchString(line):
 			line = parser.splitLineWithHeader(extraLinkMatch, line, nil)
@@ -87,6 +91,10 @@ func (parser *Parser) parseHolidays(line string) {
 			newItem := ReligiousHolidayDescr{GroupAbbr: "бахаи"}
 			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
 			line = parser.splitLineWithHeader(bahaiRegex, line, &newItem.Descriptions)
+		case armRegex.MatchString(line):
+			newItem := ReligiousHolidayDescr{GroupAbbr: "Армянская апостол. церковь"}
+			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
+			line = parser.splitLineWithHeader(armRegex, line, &newItem.Descriptions)
 		case parser.currentArray == nil:
 			newItem := ReligiousHolidayDescr{}
 			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
@@ -131,13 +139,13 @@ func (parser *Parser) splitLineWithHeader(headerRegexp *regexp.Regexp, line stri
 
 func (parser *Parser) parseNamedays(line string) {
 	line = strings.Trim(line, ".;— ")
-	reAs := regexp.MustCompile("также:")
+	reAs := regexp.MustCompile("также:|Мужские:?|Женские:?|Католические:?|Православные( \\(?по новому стилю\\)?)?:?|Дата (дана )?по новому стилю:?")
 	if has := reAs.MatchString(line); has {
 		lines := reAs.Split(line, 2)
 		for _, l := range lines {
 			l = strings.TrimSpace(l)
 			if l != "" {
-				parser.report.NameDays = append(parser.report.NameDays, l)
+				parser.parseSubnames(l)
 			}
 		}
 		return
@@ -146,7 +154,30 @@ func (parser *Parser) parseNamedays(line string) {
 	if has := reAs.MatchString(line); has {
 		line = reAs.Split(line, 2)[0]
 	}
-	parser.report.NameDays = append(parser.report.NameDays, strings.TrimSpace(line))
+	tline := strings.TrimSpace(line)
+	parser.parseSubnames(tline)
+}
+
+func (parser *Parser) parseSubnames(line string) {
+	line = strings.Trim(line, ":")
+	if strings.Contains(line, "— "){
+		s := strings.Split(line, "— ")
+		parser.addName(strings.TrimSpace(s[0]))
+	} else {
+		parser.addName(line)
+	}
+}
+
+func (parser *Parser) addName(line string) {
+	if parser.currNames != nil {
+		for _, name := range(parser.currNames) {
+			if strings.Contains(line, strings.Trim(name, "()")) {
+				return
+			}
+		}
+	}
+	parser.report.NameDays = append(parser.report.NameDays, line)
+	parser.currNames = strings.Split(line, " ")
 }
 
 func (parser *Parser) parseOmens(line string) {
