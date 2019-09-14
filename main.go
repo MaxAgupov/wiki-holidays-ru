@@ -129,7 +129,7 @@ func main() {
 			month[day] = &d
 		}
 	}
-	tmpFile, err := os.OpenFile("holidays.v1.1.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	tmpFile, err := os.OpenFile("holidays.v1.2.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if err != nil {
 		log.Fatal(err)

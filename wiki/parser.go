@@ -159,25 +159,97 @@ func (parser *Parser) parseNamedays(line string) {
 }
 
 func (parser *Parser) parseSubnames(line string) {
-	line = strings.Trim(line, ":")
-	if strings.Contains(line, "— "){
+	switch {
+	case strings.Contains(line, "— ") && strings.Contains(line, ","), strings.Contains(line, "— ") && strings.Contains(line, " (") && strings.Contains(line, ")") :
 		s := strings.Split(line, "— ")
-		parser.addName(strings.TrimSpace(s[0]))
-	} else {
-		parser.addName(line)
+		parser.parseSubnames(strings.TrimSpace(s[0]))
+	default:
+		names := strings.Split(line, ",")
+		for _, name := range(names) {
+			name = strings.Trim(name, ":")
+			if strings.Contains(name, "— "){
+				s := strings.Split(name, "— ")
+				parser.addName(strings.TrimSpace(s[0]))
+			} else {
+				parser.addName(strings.TrimSpace(name))
+			}
+		}
 	}
 }
 
 func (parser *Parser) addName(line string) {
-	if parser.currNames != nil {
-		for _, name := range(parser.currNames) {
-			if strings.Contains(line, strings.Trim(name, "()")) {
+	var names []string
+	var namesToCheck []string
+
+	for _, existedName := range (parser.report.NameDays) {
+		if strings.Contains(line, existedName) {
+			s := strings.Split(line, " ")
+			if len(s) == 1 {
+				if s[0] == existedName {
+					return
+				}
+			} else {
 				return
 			}
 		}
 	}
-	parser.report.NameDays = append(parser.report.NameDays, line)
-	parser.currNames = strings.Split(line, " ")
+	//if strings.Contains(line, " (") && strings.Contains(line, ")") {
+	//	s := strings.Split(line, " (")
+	//	parser.parseSubnames(s[0])
+	//	s2 := strings.Split(s[1], ")")
+	//	parser.parseSubnames(s2[0])
+	//	return
+	//}
+	lines := strings.Split(line, " ")
+	switch size := len(lines); size {
+	case 1:
+		if strings.Contains(line, "(") && strings.Contains(line, ")") {
+			namesToCheck = append(namesToCheck, line)
+		} else {
+			namesToCheck = append(namesToCheck, strings.Trim(line, "()"))
+		}
+		break
+	case 2:
+		namesToCheck = append(namesToCheck, lines[0], strings.Trim(lines[1], "()"))
+		break
+	case 3:
+		if lines[1] == "и" {
+			namesToCheck = append(namesToCheck, lines[0], lines[2])
+			break
+		}
+		return
+	default:
+		return
+	}
+	//if parser.currNames != nil {
+	//	for _, existedName := range (parser.currNames) {
+	//		if strings.Contains(line, strings.Trim(existedName, "()")) {
+	//			return
+	//		}
+	//	}
+	for _, checkedName := range namesToCheck {
+		exists := false
+		for _, existedNames := range (parser.report.NameDays) {
+			if existedNames == checkedName || checkedName == "имя" {
+				exists = true
+				break
+			}
+		}
+		if (!exists) {
+			names = append(names, checkedName)
+		}
+	}
+	//}
+	//names = append(names, line)
+	parser.appendNames(names)
+}
+
+func (parser *Parser) appendNames(line []string) {
+	for _, name := range line {
+		parser.report.NameDays = append(parser.report.NameDays, name)
+		parser.currNames = strings.Split(name, " ")
+	}
+
 }
 
 func (parser *Parser) parseOmens(line string) {
