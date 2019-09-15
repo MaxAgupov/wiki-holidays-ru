@@ -35,6 +35,9 @@ func (parser *Parser) setHeader(header string, parserFunc func(line string)) {
 func (parser *Parser) setSubheader(subheader string) {
 	parser.subheader = strings.TrimSpace(subheader)
 	parser.currentArray = nil
+	if parser.subheader == "Региональные" {
+		parser.parser = parser.parseHolidays
+	}
 }
 
 func (parser *Parser) parseHolidays(line string) {
@@ -49,7 +52,7 @@ func (parser *Parser) parseHolidays(line string) {
 		switch parser.subheader {
 		case intHolidaysSubheader:
 			parser.currentArray = &parser.report.HolidaysInt
-		case locHolidaysSubheader:
+		case locHolidaysSubheader, regHolidaysSubheader:
 			parser.currentArray = &parser.report.HolidaysLoc
 		case profHolidaysSubheader:
 			parser.currentArray = &parser.report.HolidaysProf
@@ -139,7 +142,7 @@ func (parser *Parser) splitLineWithHeader(headerRegexp *regexp.Regexp, line stri
 
 func (parser *Parser) parseNamedays(line string) {
 	line = strings.Trim(line, ".;— ")
-	reAs := regexp.MustCompile("также:|Мужские:?|Женские:?|Католические:?|Православные( \\(?по новому стилю\\)?)?:?|Дата (дана )?по новому стилю:?")
+	reAs := regexp.MustCompile("также:|Мужские:?|Женские:?|Католические:?|Православие:?|Православные( \\(?по новому стилю\\)?)?:?|Дата (дана )?по новому стилю:?")
 	if has := reAs.MatchString(line); has {
 		lines := reAs.Split(line, 2)
 		for _, l := range lines {

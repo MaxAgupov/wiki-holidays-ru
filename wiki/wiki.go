@@ -43,6 +43,7 @@ const locHolidaysSubheader = "Национальные"
 const rlgHolidaysSubheader = "Религиозные"
 const profHolidaysSubheader = "Профессиональные"
 const nameDaysSubheader = "Именины"
+const regHolidaysSubheader = "Региональные"
 
 const MoscowLocation = "Europe/Moscow"
 
