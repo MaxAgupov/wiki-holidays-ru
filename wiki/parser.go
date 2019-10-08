@@ -137,6 +137,7 @@ func (parser *Parser) splitLineWithHeader(headerRegexp *regexp.Regexp, line stri
 		}
 		line = lines[1]
 	}
+	line = strings.Trim(line, "— ")
 	return line
 }
 
