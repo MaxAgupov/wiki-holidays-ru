@@ -106,7 +106,7 @@ func (parser *Parser) parseHolidays(line string) {
 			parser.currentArray = &newItem.Descriptions
 		}
 		reApostle := regexp.MustCompile("память апостол.*")
-		reMemorial := regexp.MustCompile("^[Пп]амять .*|.*священномучени.*|.*мощей.*")
+		reMemorial := regexp.MustCompile("^[Пп]амять .*|.*священномучени.*|.*мощей.*|.*преставление преподобн.*")
 
 		if has := reMemorial.MatchString(line); has {
 			if has = reApostle.MatchString(line); !has {
