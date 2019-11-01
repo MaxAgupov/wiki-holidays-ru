@@ -199,13 +199,7 @@ func (parser *Parser) addName(line string) {
 			}
 		}
 	}
-	//if strings.Contains(line, " (") && strings.Contains(line, ")") {
-	//	s := strings.Split(line, " (")
-	//	parser.parseSubnames(s[0])
-	//	s2 := strings.Split(s[1], ")")
-	//	parser.parseSubnames(s2[0])
-	//	return
-	//}
+
 	if strings.Contains(line, "мощей") {
 		return
 	}
@@ -235,12 +229,7 @@ func (parser *Parser) addName(line string) {
 	default:
 		return
 	}
-	//if parser.currNames != nil {
-	//	for _, existedName := range (parser.currNames) {
-	//		if strings.Contains(line, strings.Trim(existedName, "()")) {
-	//			return
-	//		}
-	//	}
+
 	for _, checkedName := range namesToCheck {
 		exists := false
 		for _, existedNames := range (parser.report.NameDays) {
@@ -253,8 +242,7 @@ func (parser *Parser) addName(line string) {
 			names = append(names, checkedName)
 		}
 	}
-	//}
-	//names = append(names, line)
+
 	parser.appendNames(names)
 }
 
@@ -271,21 +259,28 @@ func (parser *Parser) parseOmens(line string) {
 		parser.currentArray = &parser.report.Omens
 	}
 
-	if len(*parser.currentArray) != 0 {
-		parser.appendOmens(line, false)
-	} else {
-		parser.appendOmens(line, true)
+	lines := strings.Split(line, "* ");
+
+	for _, l := range lines {
+		if len(*parser.currentArray) != 0 {
+			parser.appendOmens(l, false)
+		} else {
+			parser.appendOmens(l, true)
+		}
 	}
 }
 
-func (parser *Parser) appendOmens(line string, split bool) {
-	if !split {
-		line = strings.Replace(line, "* ", "", -1);
+func (parser *Parser) appendOmens(line string, firstLine bool) {
+	if !firstLine {
 		line = strings.Trim(line, "…,. ")
 		if line == "" {
 			return
 		}
-		*parser.currentArray = append(*parser.currentArray, line)
+		if strings.Count(line, " ") < 2 {
+			(*parser.currentArray)[len(*parser.currentArray)-1] = (*parser.currentArray)[len(*parser.currentArray)-1] + ", " + line
+		} else {
+			*parser.currentArray = append(*parser.currentArray, line)
+		}
 		return
 	}
 
@@ -295,7 +290,13 @@ func (parser *Parser) appendOmens(line string, split bool) {
 		if line == "" {
 			continue
 		}
-		*parser.currentArray = append(*parser.currentArray, line)
+
+		if !firstLine && strings.Count(line, " ") < 2 {
+			(*parser.currentArray)[len(*parser.currentArray)-1] = (*parser.currentArray)[len(*parser.currentArray)-1] + ", " + line
+		} else {
+			firstLine = false
+			*parser.currentArray = append(*parser.currentArray, line)
+		}
 	}
 }
 
