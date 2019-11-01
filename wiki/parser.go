@@ -52,6 +52,8 @@ func (parser *Parser) parseHolidays(line string) {
 		switch parser.subheader {
 		case intHolidaysSubheader:
 			parser.currentArray = &parser.report.HolidaysInt
+		case "Мир":
+			parser.currentArray = &parser.report.HolidaysInt
 		case locHolidaysSubheader, regHolidaysSubheader:
 			parser.currentArray = &parser.report.HolidaysLoc
 		case profHolidaysSubheader:
@@ -104,7 +106,7 @@ func (parser *Parser) parseHolidays(line string) {
 			parser.currentArray = &newItem.Descriptions
 		}
 		reApostle := regexp.MustCompile("память апостол.*")
-		reMemorial := regexp.MustCompile("^[Пп]амять .*")
+		reMemorial := regexp.MustCompile("^[Пп]амять .*|.*священномучени.*|.*мощей.*")
 
 		if has := reMemorial.MatchString(line); has {
 			if has = reApostle.MatchString(line); !has {
@@ -143,7 +145,7 @@ func (parser *Parser) splitLineWithHeader(headerRegexp *regexp.Regexp, line stri
 
 func (parser *Parser) parseNamedays(line string) {
 	line = strings.Trim(line, ".;— ")
-	reAs := regexp.MustCompile("также:|Мужские:?|Женские:?|Католические:?|Православие:?|Православные( \\(?по новому стилю\\)?)?:?|Дата (дана )?по новому стилю:?")
+	reAs := regexp.MustCompile("также:|Мужские:?|Женские:?|Католические:?|Православие:?|Православные( \\(?по новому стилю\\)?)?:?|Дата (дана )?по новому стилю:?|мученики:")
 	if has := reAs.MatchString(line); has {
 		lines := reAs.Split(line, 2)
 		for _, l := range lines {
@@ -204,7 +206,11 @@ func (parser *Parser) addName(line string) {
 	//	parser.parseSubnames(s2[0])
 	//	return
 	//}
+	if strings.Contains(line, "мощей") {
+		return
+	}
 	lines := strings.Split(line, " ")
+
 	switch size := len(lines); size {
 	case 1:
 		if strings.Contains(line, "(") && strings.Contains(line, ")") {
@@ -214,7 +220,11 @@ func (parser *Parser) addName(line string) {
 		}
 		break
 	case 2:
-		namesToCheck = append(namesToCheck, lines[0], strings.Trim(lines[1], "()"))
+		if strings.Contains(lines[0], "мучени") {
+			namesToCheck = append(namesToCheck, strings.Trim(lines[1], "()"))
+		} else {
+			namesToCheck = append(namesToCheck, lines[0], strings.Trim(lines[1], "()"))
+		}
 		break
 	case 3:
 		if lines[1] == "и" {
