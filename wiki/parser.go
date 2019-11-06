@@ -117,7 +117,7 @@ func (parser *Parser) parseHolidays(line string) {
 			}
 		}
 
-		reIcons := regexp.MustCompile("праздновани.* в честь.*икон")
+		reIcons := regexp.MustCompile("праздновани.*икон")
 		if has := reIcons.MatchString(line); has {
 			if strings.Contains(line, ":") {
 				parser.skipNext = true
