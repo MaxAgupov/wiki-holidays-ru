@@ -14,8 +14,8 @@ type Parser struct {
 	subheader    string
 	currentArray *[]string
 	parser       func(line string)
-	currNames 	 []string
-	skipNext	 bool
+	currNames    []string
+	skipNext     bool
 }
 
 func (parser *Parser) reset() {
@@ -79,6 +79,7 @@ func (parser *Parser) parseHolidays(line string) {
 		othersRegex := regexp.MustCompile("Зороастризм|Другие конфессии|В католичестве и протестантстве|:?Славянские праздники:?|Ислам(ские|.?)|В Древневосточных церквях:?|Буддизм")
 		bahaiRegex := regexp.MustCompile("Бахаи(зм)?")
 		armRegex := regexp.MustCompile("Армянская апостольская церковь:?")
+		luterRg := regexp.MustCompile("Лютеранство:?")
 		switch {
 		case extraLinkMatch.MatchString(line):
 			line = parser.splitLineWithHeader(extraLinkMatch, line, nil)
@@ -103,13 +104,17 @@ func (parser *Parser) parseHolidays(line string) {
 			newItem := ReligiousHolidayDescr{GroupAbbr: "Армянская апостол. церковь"}
 			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
 			line = parser.splitLineWithHeader(armRegex, line, &newItem.Descriptions)
+		case luterRg.MatchString(line):
+			newItem := ReligiousHolidayDescr{GroupAbbr: "лютер"}
+			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
+			line = parser.splitLineWithHeader(luterRg, line, &newItem.Descriptions)
 		case parser.currentArray == nil:
 			newItem := ReligiousHolidayDescr{}
 			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
 			parser.currentArray = &newItem.Descriptions
 		}
 		reApostle := regexp.MustCompile("память апостол.*")
-		reToExclude := regexp.MustCompile("^[Пп]амять .*|.*священномучени.*|.*мощей.*|.*преставление преподобн.*|Собор.* ?святых")
+		reToExclude := regexp.MustCompile("^[Пп]амять .*|.*священномучени.*|.*мощей.*|.*преставление .*|Собор.* ?святых")
 
 		if has := reToExclude.MatchString(line); has {
 			if has = reApostle.MatchString(line); !has {
@@ -180,14 +185,14 @@ func (parser *Parser) parseNamedays(line string) {
 
 func (parser *Parser) parseSubnames(line string) {
 	switch {
-	case strings.Contains(line, "— ") && strings.Contains(line, ","), strings.Contains(line, "— ") && strings.Contains(line, " (") && strings.Contains(line, ")") :
+	case strings.Contains(line, "— ") && strings.Contains(line, ","), strings.Contains(line, "— ") && strings.Contains(line, " (") && strings.Contains(line, ")"):
 		s := strings.Split(line, "— ")
 		parser.parseSubnames(strings.TrimSpace(s[0]))
 	default:
 		names := strings.Split(line, ",")
-		for _, name := range(names) {
+		for _, name := range names {
 			name = strings.Trim(name, ":")
-			if strings.Contains(name, "— "){
+			if strings.Contains(name, "— ") {
 				s := strings.Split(name, "— ")
 				parser.addName(strings.TrimSpace(s[0]))
 			} else {
@@ -201,7 +206,7 @@ func (parser *Parser) addName(line string) {
 	var names []string
 	var namesToCheck []string
 
-	for _, existedName := range (parser.report.NameDays) {
+	for _, existedName := range parser.report.NameDays {
 		if strings.Contains(line, existedName) {
 			s := strings.Split(line, " ")
 			if len(s) == 1 {
@@ -246,13 +251,13 @@ func (parser *Parser) addName(line string) {
 
 	for _, checkedName := range namesToCheck {
 		exists := false
-		for _, existedNames := range (parser.report.NameDays) {
+		for _, existedNames := range parser.report.NameDays {
 			if existedNames == checkedName || checkedName == "имя" {
 				exists = true
 				break
 			}
 		}
-		if (!exists) {
+		if !exists {
 			names = append(names, checkedName)
 		}
 	}
@@ -273,7 +278,7 @@ func (parser *Parser) parseOmens(line string) {
 		parser.currentArray = &parser.report.Omens
 	}
 
-	lines := strings.Split(line, "* ");
+	lines := strings.Split(line, "* ")
 
 	for _, l := range lines {
 		if len(*parser.currentArray) != 0 {

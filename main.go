@@ -33,7 +33,7 @@ func getWikiReport(day string) string {
 		"action=query&format=json&&prop=extracts&exlimit=1&explaintext&titles=" + url.QueryEscape(day)
 
 	//log.Print(wikiRequest)
-	response, err := http.Get(wikiRequest);
+	response, err := http.Get(wikiRequest)
 	if err != nil {
 		log.Print("Wikipedia is not respond", err)
 		return ""
@@ -129,7 +129,7 @@ func main() {
 			month[day] = &d
 		}
 	}
-	tmpFile, err := os.OpenFile("holidays.v1.11.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+	tmpFile, err := os.OpenFile("holidays.v1.12.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if err != nil {
 		log.Fatal(err)
