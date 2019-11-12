@@ -80,6 +80,7 @@ func (parser *Parser) parseHolidays(line string) {
 		bahaiRegex := regexp.MustCompile("Бахаи(зм)?")
 		armRegex := regexp.MustCompile("Армянская апостольская церковь:?")
 		luterRg := regexp.MustCompile("Лютеранство:?")
+		heathenismRg := regexp.MustCompile("Язычество:?")
 		switch {
 		case extraLinkMatch.MatchString(line):
 			line = parser.splitLineWithHeader(extraLinkMatch, line, nil)
@@ -108,6 +109,10 @@ func (parser *Parser) parseHolidays(line string) {
 			newItem := ReligiousHolidayDescr{GroupAbbr: "лютер"}
 			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
 			line = parser.splitLineWithHeader(luterRg, line, &newItem.Descriptions)
+		case heathenismRg.MatchString(line):
+			newItem := ReligiousHolidayDescr{GroupAbbr: "языч."}
+			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
+			line = parser.splitLineWithHeader(heathenismRg, line, &newItem.Descriptions)
 		case parser.currentArray == nil:
 			newItem := ReligiousHolidayDescr{}
 			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
