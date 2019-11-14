@@ -308,6 +308,10 @@ func (parser *Parser) appendOmens(line string, firstLine bool) {
 		return
 	}
 
+	if *parser.currentArray == nil {
+		*parser.currentArray = append(*parser.currentArray, line)
+		return
+	}
 	lines := strings.Split(line, ".")
 	for _, l := range lines {
 		line = strings.Trim(l, "…,. ")
