@@ -118,13 +118,14 @@ func (parser *Parser) parseHolidays(line string) {
 			parser.report.HolidaysRlg.Holidays = append(parser.report.HolidaysRlg.Holidays, &newItem)
 			parser.currentArray = &newItem.Descriptions
 		}
-		reApostle := regexp.MustCompile("память апостол.*")
-		reToExclude := regexp.MustCompile("^[Пп]амять .*|.*священномучени.*|.*мощей.*|.*преставление .*|Собор.* ?святых")
+		//reApostle := regexp.MustCompile("память апостол.*")
+		reToExclude := regexp.MustCompile("^[Пп]амять .*|.*священномучени.*|.*мощей.*|.*преставление .*|Собор .*|.*переходящее празднование в.*|предпраздн.*")
 
 		if has := reToExclude.MatchString(line); has {
-			if has = reApostle.MatchString(line); !has {
-				return
-			}
+			//if has = reApostle.MatchString(line); !has {
+			//	return
+			//}
+			return
 		}
 
 		reIcons := regexp.MustCompile("праздновани.*икон")
