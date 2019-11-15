@@ -165,24 +165,6 @@ func (report *Report) String() string {
 	return formattedStr
 }
 
-//func (report *Report) Events() string {
-//	formattedStr := ""
-//	if report.Stats != "" {
-//		formattedStr += report.Stats + "\n"
-//	}
-//	for k, v := range report.sections {
-//		if k == "События" || k == "Приметы" {
-//			formattedStr += "*" + k + "*\n"
-//			for _, sect := range v {
-//				formattedStr += "\n_" + sect.header + "_" + "\n"
-//				formattedStr += strings.Join(sect.content, "\n") + "\n"
-//			}
-//			formattedStr += "\n"
-//		}
-//	}
-//	return formattedStr
-//}
-
 func (report *Report) SetCalendarInfo(day *time.Time) {
 	report.Stats = GenerateCalendarStats(day)
 }
