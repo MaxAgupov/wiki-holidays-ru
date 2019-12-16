@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 	"wikiholidays/wiki"
 )
@@ -99,37 +100,84 @@ type DayHolidays struct {
 	Report wiki.Report `json:"report"`
 }
 
+type TypedDayHolidays struct {
+	Month  time.Month
+	Day    int
+	Report wiki.Report
+}
+
+type Job struct {
+	Month time.Month
+	Day   int
+	resp  chan TypedDayHolidays
+}
+
 type MonthHolidays map[int]*DayHolidays
-type Holidays map[time.Month]*MonthHolidays
+type Holidays map[time.Month]MonthHolidays
+
+func loader(job chan Job, wg *sync.WaitGroup) {
+
+	for j := range job {
+		date := strconv.Itoa(j.Day) + " " + monthsGenetive[j.Month-1]
+
+		resp := getWikiReport(date)
+		if resp == "" {
+			log.Print(date)
+
+			return
+		}
+		report, err := wiki.Parse(resp)
+		if err != nil {
+			log.Print("Error:", err)
+			wg.Done()
+			return
+		}
+
+		d := TypedDayHolidays{j.Month, j.Day, report}
+		j.resp <- d
+		wg.Done()
+	}
+}
 
 func main() {
+	var done = make(chan bool)
+
+	var jobsNum = 20
+	var jobs = make(chan Job, jobsNum)
+
 	var reports = Holidays{}
+	var days = make(chan TypedDayHolidays, jobsNum)
+	var wg sync.WaitGroup
+
+	for j := 0; j < jobsNum; j++ {
+		go loader(jobs, &wg)
+	}
+
+	go func() {
+		for d := range days {
+			h := DayHolidays{d.Month.String(), strconv.Itoa(d.Day), d.Report}
+			reports[d.Month][d.Day] = &h
+		}
+	}()
 
 	for m := time.January; m <= time.December; m++ {
 		month := MonthHolidays{}
-		reports[m] = &month
+		reports[m] = month
 		for day := 1; day <= monthDays[m-1]; day++ {
-			date := strconv.Itoa(day) + " " + monthsGenetive[m-1]
-			log.Print(date)
-			resp := getWikiReport(date)
-			if resp == "" {
-				log.Print(date)
-				break
-			}
-
-			report, err := wiki.Parse(resp)
-			if err != nil {
-				log.Print("Error:", err)
-				return
-			}
-			location, _ := time.LoadLocation(wiki.MoscowLocation)
-			log.Print(location)
-
-			d := DayHolidays{m.String(), strconv.Itoa(day), report}
-			month[day] = &d
+			wg.Add(1)
+			jobs <- Job{m, day, days}
 		}
 	}
-	tmpFile, err := os.OpenFile("holidays.v1.15.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+
+	go func() {
+		wg.Wait()
+		close(jobs)
+		close(days)
+		done <- true
+	}()
+
+	<-done
+	tmpFile, err := os.OpenFile("holidays.v1.16.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 
 	if err != nil {
 		log.Fatal(err)
