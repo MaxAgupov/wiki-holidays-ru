@@ -351,7 +351,7 @@ func Parse(fullReport string) (Report, error) {
 				parser.setHeader(header, parser.parseOmens)
 			default:
 				parser.reset()
-				log.Print("Extra header:", header)
+				//log.Print("Extra header:", header)
 			}
 		case strings.HasPrefix(line, "=== ") && strings.HasSuffix(line, " ==="):
 			parser.skipNext = false

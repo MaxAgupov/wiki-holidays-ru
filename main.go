@@ -109,13 +109,13 @@ type TypedDayHolidays struct {
 type Job struct {
 	Month time.Month
 	Day   int
-	resp  chan TypedDayHolidays
+	resp  chan *TypedDayHolidays
 }
 
 type MonthHolidays map[int]*DayHolidays
 type Holidays map[time.Month]MonthHolidays
 
-func loader(job chan Job, wg *sync.WaitGroup) {
+func loader(job chan *Job, wg *sync.WaitGroup) {
 
 	for j := range job {
 		date := strconv.Itoa(j.Day) + " " + monthsGenetive[j.Month-1]
@@ -134,19 +134,20 @@ func loader(job chan Job, wg *sync.WaitGroup) {
 		}
 
 		d := TypedDayHolidays{j.Month, j.Day, report}
-		j.resp <- d
+		j.resp <- &d
 		wg.Done()
 	}
 }
 
 func main() {
+	log.Println("Load Data from Wiki")
 	var done = make(chan bool)
 
 	var jobsNum = 20
-	var jobs = make(chan Job, jobsNum)
+	var jobs = make(chan *Job, jobsNum)
 
 	var reports = Holidays{}
-	var days = make(chan TypedDayHolidays, jobsNum)
+	var days = make(chan *TypedDayHolidays)
 	var wg sync.WaitGroup
 
 	for j := 0; j < jobsNum; j++ {
@@ -158,6 +159,7 @@ func main() {
 			h := DayHolidays{d.Month.String(), strconv.Itoa(d.Day), d.Report}
 			reports[d.Month][d.Day] = &h
 		}
+		done <- true
 	}()
 
 	for m := time.January; m <= time.December; m++ {
@@ -165,17 +167,13 @@ func main() {
 		reports[m] = month
 		for day := 1; day <= monthDays[m-1]; day++ {
 			wg.Add(1)
-			jobs <- Job{m, day, days}
+			jobs <- &Job{m, day, days}
 		}
 	}
 
-	go func() {
-		wg.Wait()
-		close(jobs)
-		close(days)
-		done <- true
-	}()
-
+	wg.Wait()
+	close(days)
+	log.Println("Wait last results")
 	<-done
 	tmpFile, err := os.OpenFile("holidays.v1.16.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 
